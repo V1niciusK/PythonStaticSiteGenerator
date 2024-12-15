@@ -1,6 +1,13 @@
 
 class HTMLNode:
-    def __init__(self, tag: str = None, value: str = None, children: list = None, props: dict[str,str] = None):
+    def __init__(
+        self,
+        tag: str = None,
+        value: str = None,
+        children: list = None,
+        props: dict[str,str] = None
+        ):
+        
         self.tag = tag
         self.value = value
         self.children = children
@@ -41,4 +48,26 @@ class LeafNode(HTMLNode):
         if self.tag == None:
             return f"{self.value}"
         
-        return f"<{self.tag}{HTMLNode.props_to_html(self)}>{self.value}</{self.tag}>"
+        return f"<{self.tag}{self.props_to_html()}>{self.value}</{self.tag}>"
+
+class ParentNode(HTMLNode):
+    def __init__(self, tag: str, children: list, props: dict[str,str] = None):
+        super().__init__(tag, None, children, props)
+    
+    def to_html(self):
+        # Guard clauses
+        if self.tag == None:
+            raise ValueError(f"Parent nodes need the tag value set")
+        
+        if (self.children == None ) or ( len(self.children) == 0 ):
+            raise ValueError(f"Parent nodes need the children value set")
+        
+        # Recursion begins here
+        #accumulator
+        children_value_chain: str = ""
+        
+        for child in self.children:
+            children_value_chain = f"{children_value_chain}{child.to_html()}"
+        
+        return f"<{self.tag}{self.props_to_html()}>{children_value_chain}</{self.tag}>"
+        
