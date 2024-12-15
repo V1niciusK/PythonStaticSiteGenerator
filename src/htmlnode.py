@@ -28,6 +28,14 @@ class HTMLNode:
         prop_string = " ".join(prop_list)
         
         return f" {prop_string}"
+    
+    def __eq__(self, comparable):
+        return (
+            self.tag == comparable.tag and
+            self.value == comparable.value and
+            self.children == comparable.children and
+            self.props == comparable.props
+        )
 
     def __repr__(self) -> str:
         return f"""
