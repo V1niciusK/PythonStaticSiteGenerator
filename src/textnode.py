@@ -41,6 +41,23 @@ class TextNode:
     
     def __repr__(self) -> None:
         return f"TextNode({self.text}, {self.text_type.value}, {self.url})"
-""" 
-def __split_nodes_by_delimiter(to_split: list, delimiter: str, delimited_type: TextType):
-    to_split.copy() """
+
+def split_nodes_by_delimiter(to_split: list[TextNode], delimiter: str, delimited_type: TextType) -> list[TextNode]:
+    result = []
+    for node in to_split:
+        # For now nested types (e.g. bold inside an italic block) are not treated
+        if node.text_type != TextType.text:
+            result.append(node)
+            continue
+        
+        original_txt = node.text
+        split_text = original_txt.split(delimiter)
+        
+        if len(split_text) != 3:
+            raise AttributeError("Text to split must contain a pair of delimiters")
+        
+        result.append( TextNode(split_text[0], TextType.text) )
+        result.append( TextNode(split_text[1], delimited_type) )
+        result.append( TextNode(split_text[2], TextType.text) )
+    
+    return result
