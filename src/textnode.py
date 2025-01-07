@@ -113,14 +113,15 @@ def split_nodes_image(toSplit: list[TextNode]) -> list[TextNode]:
     result: list[TextNode] = []
     
     for node in toSplit:
-        
+
+        #Case node has no pattern        
         matches: Match | None = search(img_pattern, node.text)
-    
+
         if matches == None:
             result.append(node)
             continue
         
-        # Grabs alt text and link
+        # Grabs alt text and link from the pattern
         linkTupleList: list[tuple[str, str]] = extract_markdown_images(node.text)
         cursorPosition: int = 0
         
@@ -143,8 +144,8 @@ def split_nodes_image(toSplit: list[TextNode]) -> list[TextNode]:
         if len(node.text[cursorPosition:]) > 0:
             remainingText: TextNode = TextNode(node.text[cursorPosition:], TextType.text)
             result.append(remainingText)
-        
-        return result
+
+    return result
         
         
         

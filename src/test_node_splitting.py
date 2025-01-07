@@ -139,10 +139,12 @@ class TestTextNode(unittest.TestCase):
         imageMarkdownNone: TextNode = TextNode("Suspendisse laoreet urna dui, non aliquet massa congue a.", TextType.text)
         nodeList: list[TextNode] = [imageMarkdownNone]
         toTest: list[TextNode] = split_nodes_image(nodeList)
+        
         self.assertEqual(
             1,
             len(toTest)
         )
+        
         self.assertEqual(
             imageMarkdownNone,
             toTest[0]
