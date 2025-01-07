@@ -4,8 +4,8 @@
 > Simple Python 3.10 Webserver for static pages written in Markdown.
 
 ### Disclaimer
-***This is not production ready software, don't use it in the real world***
-This is project as a whole was made as an exercise for the [boot.dev](https://www.boot.dev) course entitled "Build a Static Site Generator".
+***This is not production ready software, use at your own peril***
+This project was made as an exercise/required project for the [boot.dev](https://www.boot.dev) course entitled "Build a Static Site Generator". This is not production ready/production optimized code. I do not recommend using it at all.
 
 ### Architecture
 
