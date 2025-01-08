@@ -6,11 +6,11 @@ class TestTextNode(unittest.TestCase):
     
     @classmethod
     def setUpClass(cls):
-        print("Image and link conversion functions test start")
+        print("Image and link extraction test start")
     
     @classmethod
     def tearDownClass(cls):
-        print("Image and link conversion functions test done")
+        print("Image and link extraction test done")
     
     def test_img_extraction(self) -> None:
         imageSample: str = f"Lorem ipsum ![dolor](https://test.co.uk/favicon.png)"
