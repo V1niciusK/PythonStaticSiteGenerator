@@ -21,7 +21,7 @@ class TestTextNode(unittest.TestCase):
             len(toTest)
         )
         self.assertEqual(
-            TextNode("dolor", TextType.link, "sitamet"),
+            TextNode("dolor", TextType.image, "sitamet"),
             toTest[1]
         )
         self.assertEqual(
@@ -51,7 +51,7 @@ class TestTextNode(unittest.TestCase):
             len(toTest)
         )
         self.assertEqual(
-            TextNode("Vestibulum", TextType.link, "fringilla"),
+            TextNode("Vestibulum", TextType.image, "fringilla"),
             toTest[0]
         )
         

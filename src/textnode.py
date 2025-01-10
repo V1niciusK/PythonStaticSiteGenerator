@@ -55,6 +55,19 @@ class TextNode:
         return f"TextNode({self.text}, {self.text_type.value}, {self.url})"
 
 def split_nodes_by_delimiter(to_split: list[TextNode], delimiter: str, delimited_type: TextType) -> list[TextNode]:
+    """Takes a list of TextNodes, a delimiter (e.g.: `**`) and the delimited_type (e.g.: TextType.bold). Does not work with markdown links and images.
+
+    Args:
+        to_split (list[TextNode]): the list of TextNodes to be processed
+        delimiter (str): the markdown delimiter, can be: `**` for bold; `*` for italic; ` for inline code
+        delimited_type (TextType): the corresponding TextType Enum for the delimiter
+
+    Raises:
+        AttributeError: In case of a lack of delimiters
+
+    Returns:
+        list[TextNode]: List of processed TextNode, with text before the first delimiter and after the second is set as TextType.text, and text inside the delimiter is set as the demilited_type.
+    """
     result = []
     for node in to_split:
         # For now nested types (e.g. bold inside an italic block) are not treated
@@ -74,7 +87,7 @@ def split_nodes_by_delimiter(to_split: list[TextNode], delimiter: str, delimited
     
     return result
 
-# WIP
+# WIP: 
 def split_nodes_improved(to_split: list[TextNode], delimiter: str) -> list[TextNode]:
     result = []
     
@@ -131,8 +144,9 @@ def extract_markdown_links(toExtract: str) -> list[tuple[str, str]]:
     Returns:
         list[tuple[str, str]]: List of tuples found on string, each item of list contains (anchor, link) in this order.
     """
-    #              pattern: [    gp1   ] (    gp2   )
-    lnk_pattern: str = r"\s\[([^\]]*?)\]\(([^\)]+?)\)"
+    lnk_pattern: str = r"(?:^| )[^\!]?\[([^\]]*?)\]\(([^\)]+?)\)"
+    # For an explanation of this ^ mad pattern, check split nodes link
+    
     extracted = findall(lnk_pattern, toExtract)
     return extracted
 
@@ -193,14 +207,29 @@ def split_nodes_link(toSplit: list[TextNode]) -> list[TextNode]:
     Returns:
         list[TextNode]: List of processed TextNodes of type TextType.text and TextType.link if there were any in the list.
     """
-    #                        pattern:      [   *    ] (   *    )
-    img_pattern: Pattern = compile(r"[^!]?\[[^\]]*?\]\([^\)]+?\)") # change for image or link
+    #                        pattern:               [   *    ] (   *    )
+    link_pattern: Pattern = compile(r"(?:^| )[^\!]?\[[^\]]*?\]\([^\)]+?\)") # change for image or link
+    '''
+    Let me describe the madness that is the regex above, because I know I will forget about it:
+    First there is a non-capturing group (?: ) that can contain either the beginning of a line ^ or a space. (?:^| )
+        The capturing group is to assure that the edge case of a beginning link is also capture, while maintaining the match cases where a space might precede the link.
+        The reason I didn't pick \s is because for some reason it was matching newline characters
+        The reason why space is there is to avoid matching
+    Then there is a requirement of no exclamation marks before the real pattern. That is the [^\!]? in the pattern
+    Then there is the real link pattern, which is somewhat simple:
+        First is open brackets \[
+        Then there is a group of zero or more characters that are not the close brackets \]
+        Then there is a close bracket \]
+        Next is a open parenthesis \(
+        Followed by one or more characters (bc there must be an url) different from close parenthesis \)
+        Finally a close parenthesis \)
+    '''
     result: list[TextNode] = []
     
     for node in toSplit:
 
-        #Case node has no pattern, should've been a guard clause   
-        matches: Match | None = search(img_pattern, node.text)
+        #Case node has no pattern, should've been a guard clause
+        matches: Match | None = search(link_pattern, node.text)
 
         if matches == None:
             result.append(node)
