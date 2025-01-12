@@ -1,5 +1,8 @@
 # PythonStaticSiteGenerator
 
+> ***Attention***
+> This project is yet unfinished. Development is underway.
+
 ### Description
 > Simple Python 3.10 Webserver for static pages written in Markdown.
 
