@@ -20,6 +20,21 @@ class TextType(Enum):
     link = "link"
     image = "image"
 
+class BlockType(Enum):
+    paragraph = "paragraph"
+    code = "code"
+    quote = "quote"
+    ul = "unordered list"
+    nol = "number ordered list"
+    lol = "letter ordered list"
+    rol = "roman ordered list"
+    h1 = "heading 1"
+    h2 = "heading 2"
+    h3 = "heading 3"
+    h4 = "heading 4"
+    h5 = "heading 5"
+    h6 = "heading 6"
+
 class TextNode:
     """This is an intermediary class for translating Markdown into HTML.
     
@@ -64,6 +79,9 @@ class TextNode:
     def __repr__(self) -> None:
         return f"TextNode({self.text}, {self.text_type.value}, {self.url})"
 
+#=======#
+# Utils #
+#=======#
 def flipFlopTextType(iterator: int, parity: bool, alternator: TextType) -> TextType:
     """Alternates between TextType.text and alternator. When parity is True, when iterator is 0 it returns TextType.text.
 
@@ -83,6 +101,45 @@ def flipFlopTextType(iterator: int, parity: bool, alternator: TextType) -> TextT
         return TextType.text
     else:
         return alternator
+
+def getHeaderLevel(header: str, currentlevel: int) -> int:
+    """Dumbest way possible: recursion, but I wanted to train it here. Takes a string and returns the markdown level of the header (counts # in the beginning the line) as a int, or -1 if not a valid header (more than 6 #).
+
+    Args:
+        header (str): potential header string
+        currentlevel (int): current suspected level
+
+    Returns:
+        int: returns a number from 1 to 6 if a valid markdown header. 0 or -1 if not a valid header
+    """
+    # Base case
+    if header.startswith(" "):
+        return currentlevel
+    
+    # Weird edge case
+    if ( header.startswith("#") ) and ( currentlevel == 6 ):
+        return -1
+    
+    return getHeaderLevel(header[1:], currentlevel + 1 )
+
+def headerMapper(level: int) -> BlockType:
+    match level:
+        case 1:
+            return BlockType.h1
+        case 2:
+            return BlockType.h2
+        case 3:
+            return BlockType.h3
+        case 4:
+            return BlockType.h4
+        case 5:
+            return BlockType.h5
+        case 6:
+            return BlockType.h6
+
+#==================#
+# Inline Functions #
+#==================#
 '''
 # Keeping the old function bc the new one does not fully comply with the boot.dev exercises
 def split_nodes_by_delimiter(toSplit: list[TextNode], delimiter: str, delimited_type: TextType) -> list[TextNode]:
@@ -324,7 +381,6 @@ def split_nodes_link(toSplit: list[TextNode]) -> list[TextNode]:
 
     return result
 
-# test
 def text_to_textnodes(toConvert: str) -> list[TextNode]:
     """Converts the input markdown string into a list of TextNodes of the appropriate type
 
@@ -351,4 +407,75 @@ def text_to_textnodes(toConvert: str) -> list[TextNode]:
     stage5_splitInline: list[TextNode] = split_nodes_by_delimiter(stage4_splitItalic, "`")
     print(f"{stage5_splitInline = }")
     return stage5_splitInline
+
+#=================#
+# Block Functions #
+#=================#
+
+# To break into smaller functions
+def markdown_to_blocks(markdownTxt: str) -> list[str]:
+    result: list[str] = []
+    print(f"{markdownTxt = }")
+    splitMarkdown: list[str] = markdownTxt.splitlines()
+    trimmedMarkdown: list[str] = list(map(lambda t: t.strip(),splitMarkdown))
     
+    """ # Fast but wrong way of doing it
+    print(f"{splitMarkdown = }")
+    filteredMarkdown: list[str] = list(filter(lambda t: len(t) > 0, trimmedMarkdown))
+    print(f"{filteredMarkdown = }")"""
+    
+    acc = ""
+    
+    for line in trimmedMarkdown:
+        if len(line) == 0:
+            if len(acc) > 0:
+                result.append(acc)
+                acc.clear()
+            continue
+        
+        if line.startswith(( "* ", "- ", "+ ", "1. ", "a. ", "i. ", "```", "> ")):
+            acc += f"{line}\n"
+            continue
+        
+        result.append(line)
+    
+    if len(acc) > 0:
+        result.append(acc)
+    
+    print(f"{result = }")
+    
+    return result
+
+def block_to_blocktype(block: str) -> BlockType:
+    #Guard clause, non obvious types:
+    if not block.startswith(( "* ", "- ", "+ ", "1. ", "a. ", "i. ", "```", "> ", "# ", "##")):
+        return BlockType.paragraph
+    
+    identifier: str = block[:2]
+    
+    match identifier:
+        case r"# ":
+            return BlockType.h1
+        case r"##":
+            headerLevel: int = getHeaderLevel(block[2:], 2)
+            return headerMapper(headerLevel)        
+        case "``":
+            return BlockType.code
+        case "> ":
+            return BlockType.quote
+        case "* ":
+            return BlockType.ul
+        case "- ":
+            return BlockType.ul
+        case "+ ":
+            return BlockType.ul
+    
+    # To update in case of numbered list (uses 3 starting characters)
+        case "1. ":
+            return BlockType.nol # to improve
+        case "a. ":
+            return BlockType.lol # to improve
+        case "i. ":
+            return BlockType.rol # to improve
+
+#
