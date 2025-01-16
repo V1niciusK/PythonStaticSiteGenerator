@@ -67,7 +67,7 @@ print("hello world")
             toTest
         )
 
-    def test_block_classification_ul(self):
+    def test_block_classification_dashul(self):
         testBlock: str = """- item1
 - item2
 - item3 
@@ -79,7 +79,7 @@ print("hello world")
             toTest
         )
         
-    def test_block_classification_ul(self):
+    def test_block_classification_plusul(self):
         testBlock: str = """+ item1
 + item2
 + item3 
@@ -91,7 +91,7 @@ print("hello world")
             toTest
         )
  
-    def test_block_classification_ul(self):
+    def test_block_classification_starul(self):
         testBlock: str = """* item1
 * item2
 * item3 
@@ -100,6 +100,42 @@ print("hello world")
         
         self.assertEqual(
             BlockType.ul,
+            toTest
+        )
+        
+    def test_block_classification_nol(self):
+        testBlock: str = """1. item1
+2. item2
+3. item3 
+        """
+        toTest: BlockType = block_to_blocktype(testBlock)
+        
+        self.assertEqual(
+            BlockType.nol,
+            toTest
+        )
+    
+    def test_block_classification_lol(self):
+        testBlock: str = """a. item1
+b. item2
+c. item3 
+        """
+        toTest: BlockType = block_to_blocktype(testBlock)
+        
+        self.assertEqual(
+            BlockType.lol,
+            toTest
+        )
+    
+    def test_block_classification_rol(self):
+        testBlock: str = """i. item1
+ii. item2
+iii. item3 
+        """
+        toTest: BlockType = block_to_blocktype(testBlock)
+        
+        self.assertEqual(
+            BlockType.rol,
             toTest
         )
 

@@ -123,6 +123,11 @@ def getHeaderLevel(header: str, currentlevel: int) -> int:
     return getHeaderLevel(header[1:], currentlevel + 1 )
 
 def headerMapper(level: int) -> BlockType:
+    
+    # Guard clause
+    if (level < 1) or (level > 6):
+        return BlockType.paragraph
+    
     match level:
         case 1:
             return BlockType.h1
@@ -391,21 +396,18 @@ def text_to_textnodes(toConvert: str) -> list[TextNode]:
         list[TextNode]: list of TextNodes that can be of TextType text, bold, italic, inline code, links and images, according to the input provided, in the order provided
     """
     
-    print(f"{toConvert = }")
-    
     stage0_unprocessed: list[TextNode] = [ TextNode(toConvert, TextType.text) ]
-    print(f"{stage0_unprocessed = }")
     
     stage1_splitImage: list[TextNode] = split_nodes_image(stage0_unprocessed)
-    print(f"{stage1_splitImage = }")
+    
     stage2_splitLink: list[TextNode] = split_nodes_link(stage1_splitImage)
-    print(f"{stage2_splitLink = }")
+    
     stage3_splitBold: list[TextNode] = split_nodes_by_delimiter(stage2_splitLink, "**")
-    print(f"{stage3_splitBold = }")
+    
     stage4_splitItalic: list[TextNode] = split_nodes_by_delimiter(stage3_splitBold, "*")
-    print(f"{stage4_splitItalic = }")
+
     stage5_splitInline: list[TextNode] = split_nodes_by_delimiter(stage4_splitItalic, "`")
-    print(f"{stage5_splitInline = }")
+
     return stage5_splitInline
 
 #=================#
@@ -415,14 +417,13 @@ def text_to_textnodes(toConvert: str) -> list[TextNode]:
 # To break into smaller functions
 def markdown_to_blocks(markdownTxt: str) -> list[str]:
     result: list[str] = []
-    print(f"{markdownTxt = }")
+
     splitMarkdown: list[str] = markdownTxt.splitlines()
     trimmedMarkdown: list[str] = list(map(lambda t: t.strip(),splitMarkdown))
     
     """ # Fast but wrong way of doing it
-    print(f"{splitMarkdown = }")
     filteredMarkdown: list[str] = list(filter(lambda t: len(t) > 0, trimmedMarkdown))
-    print(f"{filteredMarkdown = }")"""
+    """
     
     acc = ""
     
@@ -441,8 +442,7 @@ def markdown_to_blocks(markdownTxt: str) -> list[str]:
     
     if len(acc) > 0:
         result.append(acc)
-    
-    print(f"{result = }")
+
     
     return result
 
@@ -471,11 +471,16 @@ def block_to_blocktype(block: str) -> BlockType:
             return BlockType.ul
     
     # To update in case of numbered list (uses 3 starting characters)
+    identifier: str = block[:3]
+    match identifier:
         case "1. ":
-            return BlockType.nol # to improve
+            return BlockType.nol
         case "a. ":
-            return BlockType.lol # to improve
+            return BlockType.lol
         case "i. ":
-            return BlockType.rol # to improve
+            return BlockType.rol
+    
+    # In case a block begins with 1.* or a.* or i.*
+    return BlockType.paragraph
 
 #
