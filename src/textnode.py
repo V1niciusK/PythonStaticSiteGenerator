@@ -1,6 +1,6 @@
 from re import findall, compile, search, Pattern, Match
 from enum import Enum
-from htmlnode import LeafNode
+from htmlnode import LeafNode, ParentNode
 
 """
 This is a V0.1 beta of this library.
@@ -28,6 +28,7 @@ class BlockType(Enum):
     nol = "number ordered list"
     lol = "letter ordered list"
     rol = "roman ordered list"
+    h = "header"
     h1 = "heading 1"
     h2 = "heading 2"
     h3 = "heading 3"
@@ -102,7 +103,7 @@ def flipFlopTextType(iterator: int, parity: bool, alternator: TextType) -> TextT
     else:
         return alternator
 
-def getHeaderLevel(header: str, currentlevel: int) -> int:
+def getHeaderLevel(header: str, currentlevel: int = 0) -> int:
     """Dumbest way possible: recursion, but I wanted to train it here. Takes a string and returns the markdown level of the header (counts # in the beginning the line) as a int, or -1 if not a valid header (more than 6 #).
 
     Args:
@@ -386,6 +387,11 @@ def split_nodes_link(toSplit: list[TextNode]) -> list[TextNode]:
 
     return result
 
+
+#======================#
+# Conversion Functions #
+#======================#
+
 def text_to_textnodes(toConvert: str) -> list[TextNode]:
     """Converts the input markdown string into a list of TextNodes of the appropriate type
 
@@ -410,9 +416,14 @@ def text_to_textnodes(toConvert: str) -> list[TextNode]:
 
     return stage5_splitInline
 
-#=================#
-# Block Functions #
-#=================#
+def inline_to_html(toConvert: str) -> list[LeafNode]:
+    textNodeList: list[TextNode] = text_to_textnodes(toConvert)
+    childList: list[LeafNode] = []
+    
+    for textNode in textNodeList:
+        childList.append(textNode.to_html_node())
+        
+    return childList
 
 # To break into smaller functions
 def markdown_to_blocks(markdownTxt: str) -> list[str]:
@@ -455,10 +466,11 @@ def block_to_blocktype(block: str) -> BlockType:
     
     match identifier:
         case r"# ":
-            return BlockType.h1
+            return BlockType.h
         case r"##":
             headerLevel: int = getHeaderLevel(block[2:], 2)
-            return headerMapper(headerLevel)        
+            if headerLevel > 1:
+                return BlockType.h       
         case "``":
             return BlockType.code
         case "> ":
@@ -483,4 +495,97 @@ def block_to_blocktype(block: str) -> BlockType:
     # In case a block begins with 1.* or a.* or i.*
     return BlockType.paragraph
 
+def block_to_quote(block: str) -> ParentNode:
+    quoteLines: list[str] = block.splitlines()
+    childrenNodes: list[ParentNode] = []
+    
+    for line in quoteLines:
+        quoteNode: ParentNode = ParentNode("p",inline_to_html(line[2:]))
+        childrenNodes.append(quoteNode)
+    
+    return ParentNode("blockquote",childrenNodes)
+
+def block_to_list(block: str, blockType: BlockType) -> ParentNode:
+    parentTag: str = "ul"
+    parentProps: dict[str, str] = {"style": "list-style-type:disc;"}
+    match blockType:
+        case BlockType.nol:
+            parentTag: str = "ol"
+            parentProps: dict[str, str] = {"type": "1"}
+        case BlockType.lol:
+            parentTag: str = "ol"
+            parentProps: dict[str, str] = {"type": "a"}
+        case BlockType.rol:
+            parentTag: str = "ol"
+            parentProps: dict[str, str] = {"type": "i"}
+        
+        case BlockType.ul:
+            parentTag: str = "ul"
+            tick: str = block[0]
+            match tick:
+                case "*":
+                    parentProps: dict[str, str] = {"style": "list-style-type:disc;"}
+                case "-":
+                    parentProps: dict[str, str] = {"style": "list-style-type:square;"}
+                case "+":
+                    parentProps: dict[str, str] = {"style": "list-style-type:circle;"}
+    
+    blockItems: list[str] = block.splitlines()
+    childItems: list[ParentNode] = []
+    for item in blockItems:
+        if blockType == BlockType.ul:
+            child = ParentNode("li", inline_to_html(item[2:]))
+        else:
+            child = ParentNode("li", inline_to_html(item[3:]))
+        childItems.append(child)
+    
+    return ParentNode(parentTag, childItems, parentProps)
+                    
+def block_to_code(block: str) -> ParentNode:
+    child = LeafNode("code", block)
+    
+    return ParentNode("pre", child)
+
+def block_to_header(block:str) -> LeafNode:
+    headerLevel = getHeaderLevel(block)
+    return LeafNode(f"h{headerLevel}", inline_to_html(block[headerLevel:]))
+
+def markdown_to_hml_node(markdownTxt: str) -> ParentNode:
+    textBlocks: list[str] = markdown_to_blocks(markdownTxt)
+    
+    intermediaryData: list[tuple[str, BlockType]] = []
+    
+    for block in textBlocks:
+        blockType: BlockType = block_to_blocktype(block)
+        processedBlock: tuple[str, BlockType] = (block, blockType)
+        intermediaryData.append(processedBlock)
+    
+    childList = []
+    
+    for data in intermediaryData:
+        match data[1]:
+            case BlockType.paragraph:
+                childList.append( LeafNode("p", data[0]) )
+            case BlockType.code:
+                childList.append( block_to_code(data[0]) )
+            case BlockType.quote:
+                childList.append( block_to_quote(data[0]) )
+            
+            # There is a better way
+            case BlockType.ul:
+                childList.append( block_to_list(data) )
+            case BlockType.nol:
+                childList.append( block_to_list(data) )
+            case BlockType.lol:
+                childList.append( block_to_list(data) )
+            case BlockType.rol:
+                childList.append( block_to_list(data) )
+            
+            case BlockType.h:
+                childList.append( block_to_header(data[0]) )
+    
+    bodyWrapper = ParentNode("body", childList)
+    
+    return ParentNode("html", bodyWrapper)
+    
 #

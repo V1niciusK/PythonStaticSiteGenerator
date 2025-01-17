@@ -42,7 +42,7 @@ class TestTextNode(unittest.TestCase):
         toTest: BlockType = block_to_blocktype(testBlock)
         
         self.assertEqual(
-            BlockType.h1,
+            BlockType.h,
             toTest
         )
     
@@ -51,7 +51,7 @@ class TestTextNode(unittest.TestCase):
         toTest: BlockType = block_to_blocktype(testBlock)
         
         self.assertEqual(
-            BlockType.h5,
+            BlockType.h,
             toTest
         )
     
@@ -139,6 +139,6 @@ iii. item3
             toTest
         )
 
-   
+
 if __name__ == '__main__':
     unittest.main()
