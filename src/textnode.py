@@ -445,7 +445,7 @@ def markdown_to_blocks(markdownTxt: str) -> list[str]:
                 acc = ""
             continue
         
-        if line.startswith(( "* ", "- ", "+ ", "1. ", "a. ", "i. ", "```", "> ")):
+        if ( len(acc) > 0 ) or  ( line.startswith(( "* ", "- ", "+ ", "1. ", "a. ", "i. ", "```", "> ")) ):
             acc += f"{line}\n"
             continue
         
@@ -548,7 +548,8 @@ def block_to_list(block: str, blockType: BlockType) -> ParentNode:
     return ParentNode(parentTag, childItems, parentProps)
                     
 def block_to_code(block: str) -> ParentNode:
-    child: LeafNode = LeafNode("code", block)
+    treatedCode: str = block.replace("```\n","").replace("\n", "<br/>")
+    child: LeafNode = LeafNode("code", treatedCode)
     
     return ParentNode("pre", [child])
 
@@ -561,6 +562,7 @@ def block_to_header(block:str) -> HTMLNode:
 
     return ParentNode(f"h{headerLevel}", title)
 
+#####
 def markdown_to_hml_node(markdownTxt: str) -> ParentNode:
     textBlocks: list[str] = markdown_to_blocks(markdownTxt)
     

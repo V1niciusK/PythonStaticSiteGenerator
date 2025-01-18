@@ -69,6 +69,7 @@ class TestTextNode(unittest.TestCase):
 Ut eget molestie **lorem**. Donec `neque nisl`, lacinia ut laoreet vulputate, cursus at eros. Nulla vitae sodales ligula, eget lobortis lacus. Integer convallis pretium purus, quis finibus dolor pretium faucibus. Nam venenatis lacinia ipsum, a placerat nunc iaculis sit amet.
 
 ```
+# Code comment test
 print(f"Nullam rhoncus velit vel augue finibus")
 print("non efficitur tellus sagittis")
 ```
@@ -86,6 +87,7 @@ c. another test
 + unordered 4
 
 #CheckYourBearTraps In finibus porttitor molestie.
+1.1.1.1 IP ADDRESS
         '''
         toTest: ParentNode = markdown_to_hml_node(testBlock)
 
