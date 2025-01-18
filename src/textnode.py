@@ -1,6 +1,6 @@
 from re import findall, compile, search, Pattern, Match
 from enum import Enum
-from htmlnode import LeafNode, ParentNode
+from htmlnode import LeafNode, ParentNode, HTMLNode
 
 """
 This is a V0.1 beta of this library.
@@ -416,7 +416,7 @@ def text_to_textnodes(toConvert: str) -> list[TextNode]:
 
     return stage5_splitInline
 
-def inline_to_html(toConvert: str) -> list[LeafNode]:
+def inline_to_htmlNode(toConvert: str) -> list[LeafNode]:
     textNodeList: list[TextNode] = text_to_textnodes(toConvert)
     childList: list[LeafNode] = []
     
@@ -442,7 +442,7 @@ def markdown_to_blocks(markdownTxt: str) -> list[str]:
         if len(line) == 0:
             if len(acc) > 0:
                 result.append(acc)
-                acc.clear()
+                acc = ""
             continue
         
         if line.startswith(( "* ", "- ", "+ ", "1. ", "a. ", "i. ", "```", "> ")):
@@ -497,10 +497,15 @@ def block_to_blocktype(block: str) -> BlockType:
 
 def block_to_quote(block: str) -> ParentNode:
     quoteLines: list[str] = block.splitlines()
-    childrenNodes: list[ParentNode] = []
+    childrenNodes: list[HTMLNode] = []
     
     for line in quoteLines:
-        quoteNode: ParentNode = ParentNode("p",inline_to_html(line[2:]))
+        quoteNode: HTMLNode = None
+        inlineNodes: list[LeafNode] = inline_to_htmlNode(line[2:])
+        if len(inlineNodes) > 1:
+            quoteNode: HTMLNode = ParentNode("p",inlineNodes)
+        else:
+            quoteNode: HTMLNode = LeafNode("p", line[2:])
         childrenNodes.append(quoteNode)
     
     return ParentNode("blockquote",childrenNodes)
@@ -508,6 +513,7 @@ def block_to_quote(block: str) -> ParentNode:
 def block_to_list(block: str, blockType: BlockType) -> ParentNode:
     parentTag: str = "ul"
     parentProps: dict[str, str] = {"style": "list-style-type:disc;"}
+    
     match blockType:
         case BlockType.nol:
             parentTag: str = "ol"
@@ -534,21 +540,26 @@ def block_to_list(block: str, blockType: BlockType) -> ParentNode:
     childItems: list[ParentNode] = []
     for item in blockItems:
         if blockType == BlockType.ul:
-            child = ParentNode("li", inline_to_html(item[2:]))
+            child = ParentNode("li", inline_to_htmlNode(item[2:]))
         else:
-            child = ParentNode("li", inline_to_html(item[3:]))
+            child = ParentNode("li", inline_to_htmlNode(item[3:]))
         childItems.append(child)
     
     return ParentNode(parentTag, childItems, parentProps)
                     
 def block_to_code(block: str) -> ParentNode:
-    child = LeafNode("code", block)
+    child: LeafNode = LeafNode("code", block)
     
-    return ParentNode("pre", child)
+    return ParentNode("pre", [child])
 
-def block_to_header(block:str) -> LeafNode:
+def block_to_header(block:str) -> HTMLNode:
     headerLevel = getHeaderLevel(block)
-    return LeafNode(f"h{headerLevel}", inline_to_html(block[headerLevel:]))
+    title: list[LeafNode] = inline_to_htmlNode(block[headerLevel + 1:])
+    
+    if ( len(title) == 1 ) and ( title[0].tag == None ):
+        return LeafNode(f"h{headerLevel}", block[headerLevel + 1:])
+
+    return ParentNode(f"h{headerLevel}", title)
 
 def markdown_to_hml_node(markdownTxt: str) -> ParentNode:
     textBlocks: list[str] = markdown_to_blocks(markdownTxt)
@@ -560,12 +571,16 @@ def markdown_to_hml_node(markdownTxt: str) -> ParentNode:
         processedBlock: tuple[str, BlockType] = (block, blockType)
         intermediaryData.append(processedBlock)
     
-    childList = []
+    childList: list[HTMLNode] = []
     
     for data in intermediaryData:
         match data[1]:
             case BlockType.paragraph:
-                childList.append( LeafNode("p", data[0]) )
+                inlineNodes = inline_to_htmlNode(data[0])
+                if len(inlineNodes) == 0:
+                    childList.append( LeafNode("p", data[0]) )
+                else:
+                    childList.append( ParentNode("p", inlineNodes) )
             case BlockType.code:
                 childList.append( block_to_code(data[0]) )
             case BlockType.quote:
@@ -573,19 +588,19 @@ def markdown_to_hml_node(markdownTxt: str) -> ParentNode:
             
             # There is a better way
             case BlockType.ul:
-                childList.append( block_to_list(data) )
+                childList.append( block_to_list(data[0], data[1]) )
             case BlockType.nol:
-                childList.append( block_to_list(data) )
+                childList.append( block_to_list(data[0], data[1]) )
             case BlockType.lol:
-                childList.append( block_to_list(data) )
+                childList.append( block_to_list(data[0], data[1]) )
             case BlockType.rol:
-                childList.append( block_to_list(data) )
+                childList.append( block_to_list(data[0], data[1]) )
             
             case BlockType.h:
                 childList.append( block_to_header(data[0]) )
     
-    bodyWrapper = ParentNode("body", childList)
+    bodyWrapper: list[ParentNode] = ParentNode("body", childList)
     
-    return ParentNode("html", bodyWrapper)
+    return ParentNode("html", [bodyWrapper])
     
 #
