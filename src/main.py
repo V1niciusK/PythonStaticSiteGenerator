@@ -14,7 +14,9 @@ def cleanDir(dirname: str) -> None:
     """
     raise NotImplementedError
 
-def copyFiles(fileList: list[str]) -> None:
+
+# This is obviously less practical than copytree, but for the sake of the exercise this is here
+def exerciseCopyFiles(fileList: list[str], destination: str) -> None:
     """Copy files from static/ to public/ recursively
 
     Args:
@@ -24,9 +26,14 @@ def copyFiles(fileList: list[str]) -> None:
         NotImplementedError: _description_
     """
     
+    # base case
     if len(fileList) == 1:
-        raise NotImplementedError
-    pass
+        copy(fileList[0], destination)
+        return
+    
+    copy(fileList[0], destination)
+    exerciseCopyFiles(fileList[1:])
+    return
 
 ## Major functions
 
@@ -48,8 +55,6 @@ def main():
     
     # Start static content server
     
-
-
 
 if __name__ == "__main__":
     main()
